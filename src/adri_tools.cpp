@@ -1,10 +1,15 @@
 #include <adri_tools.h>
 
-#ifdef ESP8266
+#if defined(ARDUINO_ARCH_ESP8266) || defined(ARDUINO_ARCH_ESP32)
    char printf_buf[300];
    fs(tdblspace,     "\t");
    fs(tparm,         " :\t");
 #endif
+
+
+void debugPrint(String buf){Serial.print(buf);};
+void debugPrintLn(String buf){Serial.println(buf);};
+
 
 String ch_toString(char * c){
    char result[300];
@@ -38,7 +43,7 @@ void add_string(char * result, String s) {
    s.toCharArray(result+strlen(result),s.length()+1);
 }
 
-#ifdef ESP8266
+#if defined(ARDUINO_ARCH_ESP8266) || defined(ARDUINO_ARCH_ESP32)
    String info_parm(String name, String value) {
       String s=name;
       while (s.length()<25) s+=" ";
@@ -85,20 +90,77 @@ int explode(String s, char sep, String * list) {
 	return list_index;
 }
 
-#ifdef ESP8266
-String ip2string(IPAddress a) {
-  char buf[18];
-  fssprintf(buf,"%d.%d.%d.%d",a[0],a[1],a[2],a[3]);
-  return String(buf);
+#if defined(ARDUINO_ARCH_ESP8266) || defined(ARDUINO_ARCH_ESP32)
+   String ip2string(IPAddress a) {
+     char buf[18];
+     fssprintf(buf,"%d.%d.%d.%d",a[0],a[1],a[2],a[3]);
+     return String(buf);
+   }
+
+   IPAddress string2ip(String ip) {
+   	String a[10];
+   	explode(ip, '.', a);
+   	IPAddress adr={a[0].toInt(),a[1].toInt(),a[2].toInt(),a[3].toInt()};
+   	return adr;
+   }
+#endif
+void decimalToBinary(int decimal)
+
+{
+   fsprintfs("\ndecimalToBinary\n");
+   fsprintf("decimal: %d\n", decimal);
+   // int bits, bit_fac;
+   // char binary[255];
+   // bits = int(log(decimal)/log(2));
+   // for(int i = 0; i < bits+1; ++i)
+
+   //     {
+   //         bit_fac=int(pow(2,bits-i));
+   //         binary[i]=(decimal / bit_fac > 0? '1' : '0');
+   //         decimal=(decimal / bit_fac > 0? decimal - bit_fac : decimal);
+   //     }
+   //     // cout <<"Voici son equivalent binaire : ";
+   //     fsprintfs("result: ");
+   //     for(int j=0; j<bits+1; ++j)
+
+   //         {
+   //              fsprintf("%d", binary[j]);
+   //         }
+
+
+   //     cout<<endl;
+   int num = decimal;
+   uint8_t bitsCount = sizeof( num ) * 8;
+   char str[ bitsCount + 1 ];
+
+   itoa( num, str, 2 );
+   fsprintfs("result: ");
+   Serial.println( str );
+}
+int convertBinToDec(boolean Bin[]) {
+  int ReturnInt = 0;
+  for (int i = 0; i < 8; i++) {
+    if (Bin[7 - i]) {
+      Serial.print("Set Bit ");
+      Serial.print(i);
+      ReturnInt += 1<<i;
+      Serial.print(" ==> ");
+      Serial.print(1<<i);
+      Serial.print(", ");
+    }
+  }
+  return ReturnInt;
+}
+void convertDecToBin(int Dec, boolean Bin[]) {
+  for(int i = 7 ; i >= 0 ; i--) {
+    if(pow(2, i)<=Dec) {
+      Dec = Dec - pow(2, i);
+      Bin[8-(i+1)] = 1;
+    } else {
+    }
+  }
 }
 
-IPAddress string2ip(String ip) {
-	String a[10];
-	explode(ip, '.', a);
-	IPAddress adr={a[0].toInt(),a[1].toInt(),a[2].toInt(),a[3].toInt()};
-	return adr;
-}
-#endif
 
 void seconds2time(unsigned long s, char * time) {
    int milli      = (s                    ) % 1000;
@@ -233,10 +295,10 @@ String jsonAddIntValue (boolean start, char * c_label, String value) {
    return ret;
 }
 
-#ifdef ESP8266
-String heap_string() {
-   return String(system_get_free_heap_size());
-}
+#if defined(ARDUINO_ARCH_ESP8266) || defined(ARDUINO_ARCH_ESP32)
+   String heap_string() {
+      return String(system_get_free_heap_size());
+   }
 #endif
 
 // #ifndef ADRIWIFI_H

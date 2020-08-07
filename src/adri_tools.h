@@ -4,10 +4,10 @@
 	#include <arduino.h>
 
 
-			#ifdef ESP32
+			#if  defined(ARDUINO_ARCH_ESP32)
 				#include <WiFi.h>
 				#include <SPIFFS.h>
-			#else
+			#elif defined(ARDUINO_ARCH_ESP8266)
 				#include <ESP8266WiFi.h>
 				#include <FS.h>
 			#endif
@@ -16,18 +16,35 @@
 			// #include <ESP8266WiFi.h>
 
 			
-			#include <adri_wifi.h>
+			void debugPrint(String buf);
+			void debugPrintLn(String buf);
 
+		#if defined(ARDUINO_ARCH_ESP8266) || defined(ARDUINO_ARCH_ESP32)
+			
 			extern char printf_buf[];
+
 			#define fs(parm_a,parm_b) 		static const char parm_a[] PROGMEM = parm_b
 			#define fsprintln(parm_a) 		debugPrintLn(FPSTR(parm_a))
 			#define fsprint(parm_a) 		debugPrint(FPSTR(parm_a))
 			#define fsget(parm_a) 			String(FPSTR(parm_a))
-			#define fsprintf(parm_a,...) 	{sprintf_P(printf_buf, PSTR(parm_a), __VA_ARGS__); debugPrint(String(printf_buf));}
+
+
+// #ifdef DEBUG_ESP_WIFI
+// #ifdef DEBUG_ESP_PORT
+// #define DEBUG_WIFI_MULTI(fmt, ...) DEBUG_ESP_PORT.printf_P( (PGM_P)PSTR(fmt), ##__VA_ARGS__ )
+// #endif
+// #endif
+
+// #ifndef DEBUG_WIFI_MULTI
+// #define DEBUG_WIFI_MULTI(...) do { (void)0; } while (0)
+// #endif
+
+			#define fsprintf(parm_a, ...) 	{sprintf_P(printf_buf, (PGM_P)PSTR(parm_a), ##__VA_ARGS__); debugPrint(String(printf_buf));}
+
+
 			#define fsprintfs(parm_a) 		{sprintf_P(printf_buf, PSTR(parm_a)); debugPrint(String(printf_buf));}
 			#define fssprintf(parm_b, parm_a,...) sprintf_P(parm_b, PSTR(parm_a), __VA_ARGS__)
-
-		// #endif
+		#endif
 			
 
 
@@ -43,7 +60,8 @@
 		void 		add_string(char * result, String s);
 		// char * 		add_string(String s); 
 		const char * add_string(String s);
-		#if defined(ESP8266) || defined(ESP32)
+
+		#if defined(ARDUINO_ARCH_ESP8266) || defined(ARDUINO_ARCH_ESP32)
 			String      info_parm(String name, String value);
 			String      info_parm(String name, int value);
 			String      info_parm(String name, String value , String sep);
@@ -64,10 +82,13 @@
 		void 		seconds2time_h(unsigned long s, char * time);
 		String 		on_time_h(long ms);
 
-		#if defined(ESP8266) || defined(ESP32)
+		#if defined(ARDUINO_ARCH_ESP8266) || defined(ARDUINO_ARCH_ESP32)
 			String      ip2string(IPAddress a);
 			IPAddress   string2ip(String ip);
 		#endif
+		void decimalToBinary(int decimal);
+		int convertBinToDec(boolean Bin[]);
+		void convertDecToBin(int Dec, boolean Bin[]);
 
 		int         explode(String s, char sep, String * list);
 		String 		ch_toString(char * c);
