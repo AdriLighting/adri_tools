@@ -12,14 +12,15 @@ void debugPrintLn(String buf){Serial.println(buf);};
 
 
 String ch_toString(char * c){
-   char result[300];
-   sprintf(result, "%s", c);
+   char result[255];
+   fssprintf(result, "%s", c);
    return String(result);
 }
 String ch_toString(const char * c){
-   char result[300];
-   sprintf(result, "%s", c);
-   return String(result);
+   // char result[1024];
+   // sprintf(result, "%s", c);
+
+   return String((const __FlashStringHelper*) c);
 }
 // char * add_string(String s) {
 //    // char * result;
@@ -311,3 +312,277 @@ String jsonAddIntValue (boolean start, char * c_label, String value) {
 //     // appi_softRemotePrint(buf + "\n");
 // }
 // #endif
+// 
+
+
+   boolean stringToBool(String value) {
+      boolean ret;
+      if (value == "0") ret = false; else ret = true;
+      return ret;
+   }
+
+   boolean stringToBool(int value) {
+      if (value == 0) return false;
+      return true;
+   }   
+
+
+
+
+   int* splitTime(String Val, char sep) {
+       String      aVal            = Val;
+       byte        firstIndex      = aVal.indexOf(sep);
+       byte        secondIndex     = aVal.indexOf(sep, firstIndex + 1);
+       String      hr              = aVal.substring(0, firstIndex);
+       String      minute          = aVal.substring(firstIndex + 1, secondIndex);
+       String      sec             = aVal.substring(secondIndex + 1);
+       int         _hr             = hr.toInt();
+       int         _minute         = minute.toInt();
+       int         _sec            = sec.toInt();
+
+       int     *array          = new int[3];
+               array[0]        = _hr;
+               array[1]        = _minute;
+               array[2]        = _sec;
+       return array;    
+   }   
+
+
+String  string_to_split(String name, String value, String sep){
+    return name + sep + value;
+}
+String  string_to_split(String name, String value){
+    return name + ";" + value + "\n";
+}
+
+
+void adriTools_serialReadItem::item_add(   
+  String    name,
+  char*    key,
+  String    ret,
+  at_srFunc f )
+{
+  _name       = name;
+  _key        = key;
+  _ret        = ret;
+  _function   = f;
+}
+
+
+adriTools_serialRead * adriTools_serialRead_ptr;
+adriTools_serialRead * adriTools_serialReadPtr_get(){
+    return adriTools_serialRead_ptr;
+}
+adriTools_serialRead::adriTools_serialRead(){
+    adriTools_serialRead_ptr = this;
+  // _generalArray = new adriTools_serialReadItem[2];
+  // _generalArray[0].item_add("reset",     "a", "", adriTools_serialRead_ESPreset);
+  // _generalArray[1].item_add("reset_2",   "z", "", adriTools_serialRead_ESPreset);
+  
+
+
+  // for (int i = 0; i < 2; ++i)
+  // {
+  //   fsprintf("[%10d][%15s][%15s]\n", 
+  //               i, 
+  //               _generalArray[i]._name.c_str(), 
+  //               _generalArray[i]._key.c_str()
+  //           );
+  // }
+}
+void adriTools_serialRead::menu(){
+    fsprintf("\n[letter]\n");
+    for (int i = 0; i < _cmd_1_cnt; ++i) {
+    fsprintf("[%5d][%25s][%-15s]\n", 
+                i, 
+                _cmd_1_Array[i]._name.c_str(), 
+                _cmd_1_Array[i]._key
+            );
+    }
+    fsprintf("\n[!]\n");
+    for (int i = 0; i < _cmd_2_cnt; ++i) {
+    fsprintf("[%5d][%25s][%-15s]\n", 
+                i, 
+                _cmd_2_Array[i]._name.c_str(), 
+                _cmd_2_Array[i]._key
+            );
+    } 
+    if (_cmd_3_desc!="") {
+        fsprintf("\n[%s][%s]\n", _cmd_3_sep, _cmd_3_desc.c_str());
+    } 
+    if (_cmd_4_desc!="") {
+        fsprintf("\n[%s][%s]\n", _cmd_4_sep, _cmd_4_desc.c_str());
+    }                  
+}
+void adriTools_serialRead::cmd_array(int pos, int cnt) {
+    switch (pos){
+        case 1: 
+            _cmd_1_Array = new adriTools_serialReadItem[cnt];
+        break;
+        case 2: 
+            _cmd_2_Array = new adriTools_serialReadItem[cnt];
+        break;
+    }
+    
+    
+   
+    
+}
+
+
+void adriTools_serialRead::cmd_item_add(int pos, String name, char* key, String ret, at_srFunc f){
+
+    switch (pos){
+        case 1: 
+            _cmd_1_Array[_cmd_1_cnt].item_add(name, key, ret, f);
+            _cmd_1_cnt++;
+        break;
+        case 2: 
+            _cmd_2_Array[_cmd_2_cnt].item_add(name, key, ret, f);
+            _cmd_2_cnt++;
+        break;
+    }
+
+}
+void adriTools_serialRead::cmd_3(char* sep, String desc, at_srFunc f){
+    _cmd_3_sep  = sep;
+    _cmd_4_desc = desc;
+    _cmd_3      = f;
+}
+void adriTools_serialRead::cmd_4(char* sep, String desc, at_srFunc f){
+    _cmd_4_sep  = sep;
+    _cmd_4_desc = desc;
+    _cmd_4      = f;    
+}
+
+void adriTools_serialRead::loop(){
+
+    if(Serial.available()) { 
+        boolean next = true;
+
+        String a = Serial.readStringUntil('\n');
+
+        String cmd = "";
+        String value = "";  
+        static String lastMsg = "";
+
+        if (a.indexOf("^")>=0)a=lastMsg;
+        lastMsg = a;
+
+        if (a.indexOf("!")>=0){
+            splitText(a, "!", cmd,  value) ; 
+            for (int i = 0; i < _cmd_2_cnt; ++i) {
+                if (cmd == _cmd_2_Array[i]._key) {
+                    _cmd_2_Array[i]._function(cmd, value);
+                    next = false;
+                    break;
+                }
+            }        
+        }       
+        else if (_cmd_3_sep!="") {
+            if (a.indexOf(_cmd_3_sep)>=0) {
+                 splitText(a, _cmd_3_sep, cmd,  value) ; 
+                _cmd_3(cmd, value);
+                next = false;
+            }   
+        }   
+        else if (_cmd_4_sep!="") {
+            if (a.indexOf(_cmd_4_sep)>=0) {
+                 splitText(a, _cmd_4_sep, cmd,  value) ; 
+                _cmd_4(cmd, value);
+                next = false;
+            }                            
+        } 
+        if (next) {
+            for (int i = 0; i < _cmd_1_cnt; ++i) {
+                if (a.indexOf(_cmd_1_Array[i]._key)>=0 ) {
+                    _cmd_1_Array[i]._function("", "");
+                }
+            }                        
+        }        
+        
+    }       
+}
+int adriTools_serialRead::splitText(String A_readString, const char* sep, String & cmd, String & value) {
+
+    String  s_command;
+    String  s_valueCommand;
+    String  s_readString = A_readString;
+    char    inputChar[s_readString.length() + 1] ;
+            s_readString.toCharArray(inputChar, s_readString.length() + 1);
+    char    * Rcommand  = strtok(inputChar, sep);
+
+    while (Rcommand != 0){          
+        char* separator  = strchr(Rcommand, '=');
+        if (separator != 0) {
+            *separator  = 0;            
+            ++separator ;
+            s_command = String(Rcommand);
+            s_valueCommand = String(separator); 
+            
+            if (s_command!=""){
+                value = s_valueCommand;
+                cmd = s_command;
+                break;
+            }
+        }
+        Rcommand = strtok(0, sep); 
+    }
+
+    return 0;
+}
+
+
+
+adri_tools * adri_tools_ptr;
+adri_tools * adri_toolsPtr_get(){
+    return adri_tools_ptr;
+}
+adri_tools::adri_tools(){
+    adri_tools_ptr = this;
+}
+void adri_tools::log_read(String & ret, boolean lineNbr){
+  if (lineNbr) fsprintf("\n[_log_read]\n"); 
+  char buffer[255];
+  ret = "";
+  int nbr = 0;
+    File file = SPIFFS.open("/log.txt", "r");
+    if (file) {
+    while (file.position()<file.size()) {
+      String xml = file.readStringUntil('\n');
+      if (xml != "") {
+        if (lineNbr)  {
+            sprintf(buffer, "[%15d] %s", nbr, xml.c_str());
+          ret += String(buffer) + "\n";
+          fsprintf("%s\n", buffer);
+          delay(5);
+          nbr++;
+        }
+        else      ret += xml + "\n";
+      }
+    }
+        file.close(); 
+    }
+}
+void adri_tools::log_write(String old, String timeStr){
+    int       freeHeap  = ESP.getFreeHeap();
+    File file = SPIFFS.open("/log.txt", "w");
+    if (file) {
+        char buffer[255];
+        sprintf(buffer, "%15s | %15d", timeStr.c_str(), freeHeap);
+        String result = old + "\n" + String(buffer);
+        file.println(result);
+        file.close(); 
+    } 
+}
+
+void adri_tools::log_write(String old , String timeStr, String msg){
+    File file = SPIFFS.open("/log.txt", "w");
+    if (file) {
+        char buffer[255];
+        sprintf(buffer, "%15s | %s", timeStr.c_str(), msg.c_str());
+        String result = old + "\n" + String(buffer);
+        file.println(result);
+        file.close(); 
+    } 
+}

@@ -3,6 +3,7 @@
 	#define ADRI_TOOLS_H
 	#include <arduino.h>
 
+			#define ARRAY_SIZE(A) (sizeof(A) / sizeof((A)[0]))
 
 			#if  defined(ARDUINO_ARCH_ESP32)
 				#include <WiFi.h>
@@ -47,14 +48,6 @@
 		#endif
 			
 
-
-		// #define TRACE(text)									\
-		// 		{											\
-		// 			String t=__FILE__;						\
-		// 			t.replace("..","");						\
-		// 			t+=":"+String(__LINE__)+" "+text;		\
-		// 			Serial.println (t);								\
-				}
 
 					
 		void 		add_string(char * result, String s);
@@ -107,5 +100,111 @@
 		String 		jsonAddIntValue (boolean start, char * c_label, String value);
 
 		String 		heap_string();
-#endif
 
+		boolean 	stringToBool(String value);
+		boolean 	stringToBool(int value);
+
+		int* splitTime(String Val, char sep);
+
+		String  string_to_split(String name, String value, String sep);
+		String  string_to_split(String name, String value);
+
+	// struct SerialMenuList {
+	// 	String 	name;
+	// 	String 	key;
+	// 	// String 	ret;
+	// 	// String 	(* function)();
+		
+	// };
+	// SerialMenuList serialMenuList[10];
+		// 
+typedef String (*at_srFunc)(String cmd, String value);  
+class adriTools_serialReadItem
+{
+
+public:
+		String 			_name;
+		char* 			_key;
+		String 			_ret;
+		at_srFunc 		_function;	
+
+	adriTools_serialReadItem(){}
+	void item_add(
+		String 		name,
+		char* 		key,
+		String 		ret,
+		at_srFunc 	f		);
+
+	~adriTools_serialReadItem(){};
+	
+};
+class adriTools_serialRead
+{
+		int _cmd_1_cnt = 0;
+		int _cmd_2_cnt = 0;
+		adriTools_serialReadItem * _cmd_1_Array = nullptr; // simpl letter 	- split
+		adriTools_serialReadItem * _cmd_2_Array = nullptr; // ! 			- split
+		at_srFunc 	_cmd_3 		= NULL;		
+		char* 		_cmd_3_sep 	= "";		
+		String		_cmd_3_desc = "";		
+		at_srFunc 	_cmd_4 		= NULL;		
+		char*		_cmd_4_sep 	= "";		
+		String 		_cmd_4_desc = "";		
+public:
+
+	adriTools_serialRead();
+	~adriTools_serialRead(){};
+
+	int splitText(String A_readString, const char* sep, String & cmd, String & value) ;
+	void cmd_array(int pos, int cnt);
+
+	void cmd_item_add (int pos, String name, char* key, String ret, at_srFunc f);
+	void cmd_3(char* sep, String desc, at_srFunc f);
+	void cmd_4(char* sep, String desc, at_srFunc f);
+
+	void loop();
+	void menu();
+};
+adriTools_serialRead * adriTools_serialReadPtr_get();
+
+
+
+
+
+class adri_tools
+{
+public:
+	adri_tools();
+	~adri_tools(){};
+	void log_read(String & ret, boolean lineNbr);
+	void log_write(String old, String timeStr);
+	void log_write(String old, String timeStr, String msg);
+	
+};
+adri_tools * adri_toolsPtr_get();
+
+#endif
+/*
+void _serial_loop(String a){
+    String cmd = "";
+    String value = "";  
+    static String lastMsg = "";
+
+        if (a.indexOf("&")>=0){
+            _serialRead_split(a, "&", cmd,  value) ;
+            effectIdInstance()->settingFromSerial(cmd, value, true);
+        } else if (a.indexOf("!")>=0){
+            _serialRead_split(a, "!", cmd,  value) ;
+            if (cmd == "p") effect_manager_instance()->activateEffect(value.toInt());
+        } else {
+            if (a.indexOf("a")>=0) {effectIdInstance()->settingToSerial();Serial.println(F("__"));}
+            if (a.indexOf("z")>=0) {effect_manager_instance()->print_list();}
+            if (a.indexOf("q")>=0) {ESP.restart();}
+            if (a.indexOf("w")>=0) {
+                uint8_t pos = effect_manager_instance()->activeEffectIndex();
+                effect_manager_sav(pos);
+            }
+
+        }
+}
+*/
