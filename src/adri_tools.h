@@ -10,7 +10,7 @@
 				#include <SPIFFS.h>
 			#elif defined(ARDUINO_ARCH_ESP8266)
 				#include <ESP8266WiFi.h>
-				#include <FS.h>
+				#include <LittleFS.h>
 			#endif
 					// #ifdef ESP8266
 
@@ -50,10 +50,6 @@
 
 
 					
-		void 		add_string(char * result, String s);
-		// char * 		add_string(String s); 
-		const char * add_string(String s);
-
 		#if defined(ARDUINO_ARCH_ESP8266) || defined(ARDUINO_ARCH_ESP32)
 			String      info_parm(String name, String value);
 			String      info_parm(String name, int value);
@@ -98,6 +94,7 @@
 		String 		jsonAddStringValue (boolean start, char * c_label, String value);
 		String 		jsonAddIntValue (boolean start, String label, String value);
 		String 		jsonAddIntValue (boolean start, char * c_label, String value);
+		String 		jsonAddStringsValue (boolean start, String label, String value);
 
 		String 		heap_string();
 
@@ -126,14 +123,14 @@ class adriTools_serialReadItem
 
 public:
 		String 			_name;
-		char* 			_key;
+		const char*		_key;
 		String 			_ret;
 		at_srFunc 		_function;	
 
 	adriTools_serialReadItem(){}
 	void item_add(
 		String 		name,
-		char* 		key,
+		const char*	key,
 		String 		ret,
 		at_srFunc 	f		);
 
@@ -147,10 +144,10 @@ class adriTools_serialRead
 		adriTools_serialReadItem * _cmd_1_Array = nullptr; // simpl letter 	- split
 		adriTools_serialReadItem * _cmd_2_Array = nullptr; // ! 			- split
 		at_srFunc 	_cmd_3 		= NULL;		
-		char* 		_cmd_3_sep 	= "";		
+		char* 		_cmd_3_sep  = (char *)"";		
 		String		_cmd_3_desc = "";		
 		at_srFunc 	_cmd_4 		= NULL;		
-		char*		_cmd_4_sep 	= "";		
+		char*		_cmd_4_sep  = (char *)"";		
 		String 		_cmd_4_desc = "";		
 public:
 
@@ -160,7 +157,7 @@ public:
 	int splitText(String A_readString, const char* sep, String & cmd, String & value) ;
 	void cmd_array(int pos, int cnt);
 
-	void cmd_item_add (int pos, String name, char* key, String ret, at_srFunc f);
+	void cmd_item_add (int pos, String name, const char* key, String ret, at_srFunc f);
 	void cmd_3(char* sep, String desc, at_srFunc f);
 	void cmd_4(char* sep, String desc, at_srFunc f);
 

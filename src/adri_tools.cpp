@@ -30,21 +30,11 @@ String ch_toString(const char * c){
 //    sprintf(result,"%s",s.c_str());
 //    return result;
 // }
-const char * add_string(String s) {
-   // char * result;
-   // String t=s;
-   // s.toCharArray(result+strlen(result),s.length()+1);
-   char result[300];
-   sprintf(result,"%s",s.c_str());
-   return result;
-}
 
-void add_string(char * result, String s) {
-   String t=s;
-   s.toCharArray(result+strlen(result),s.length()+1);
-}
+
 
 #if defined(ARDUINO_ARCH_ESP8266) || defined(ARDUINO_ARCH_ESP32)
+
    String info_parm(String name, String value) {
       String s=name;
       while (s.length()<25) s+=" ";
@@ -52,7 +42,8 @@ void add_string(char * result, String s) {
    }
    String info_parm(String name, String value, int space) {
       String s=name;
-      while (s.length()<space) s+=" ";
+      int size = s.length();
+      while (size<space) s+=" ";
       return fsget(tdblspace)+s+fsget(tparm)+value+"\n";
    }
    String info_parm(String name, int value) {
@@ -67,22 +58,25 @@ void add_string(char * result, String s) {
    }
    String info_parm(String name, String value , String sep, int len, String last, String tdb1, String tdb2) {
       String s=name;
-      while (s.length()<len) s+=" ";
+      int size = s.length();
+      while (size<len) s+=" ";
       return tdb1+s+sep+tdb2+value+last;
    }
 #endif
 
 int explode(String s, char sep, String * list) {
+  // Serial.printf("\nexplode s: %s\n", s.c_str() );
 	String t=s+sep;
 	int str_index=0;
 	int list_index=0;
 	int j;
 	String sub;
-	while (str_index < t.length() ) {
+  int size = t.length();
+	while (str_index < size ) {
 		j=t.indexOf(sep,str_index);
 		if (j!=-1) {
 			sub=t.substring(str_index, j);
-			//Serial.printf("explode index:%d %s\n", str_index,sub.c_str() );
+			// Serial.printf("explode index:%d %s\n", str_index,sub.c_str() );
 			list[list_index++]=sub;
 			str_index=j+1;
 		}
@@ -101,7 +95,10 @@ int explode(String s, char sep, String * list) {
    IPAddress string2ip(String ip) {
    	String a[10];
    	explode(ip, '.', a);
-   	IPAddress adr={a[0].toInt(),a[1].toInt(),a[2].toInt(),a[3].toInt()};
+   	IPAddress adr={static_cast<uint8_t>(a[0].toInt()),
+      static_cast<uint8_t>(a[1].toInt()),
+      static_cast<uint8_t>(a[2].toInt()),
+      static_cast<uint8_t>(a[3].toInt())};
    	return adr;
    }
 #endif
@@ -164,7 +161,7 @@ void convertDecToBin(int Dec, boolean Bin[]) {
 
 
 void seconds2time(unsigned long s, char * time) {
-   int milli      = (s                    ) % 1000;
+   // int milli      = (s                    ) % 1000;
    int seconds    = (s /   (1000)         ) % 60   ;
    int minutes    = (s /   (1000*60)      ) % 60   ;
    int hours      = (s /   (1000*3600)    ) % 24   ;
@@ -275,6 +272,12 @@ String jsonAddStringValue (boolean start, String label, String value) {
    else ret = ", \""+label+"\":\"" +  value + "\"";
    return ret;
 }
+String jsonAddStringsValue (boolean start, String label, String value) {
+   String ret;
+   if (start) ret = "\""+label+"\":\"" +  value + "\"";
+   else ret = ", \""+label+"\":\"" +  value + "\"";
+   return ret;
+}
 String jsonAddStringValue (boolean start, char * c_label, String value) {
    String label = ch_toString(c_label);
    String ret;
@@ -357,10 +360,10 @@ String  string_to_split(String name, String value){
 
 
 void adriTools_serialReadItem::item_add(   
-  String    name,
-  char*    key,
-  String    ret,
-  at_srFunc f )
+  String      name,
+  const char* key,
+  String      ret,
+  at_srFunc   f )
 {
   _name       = name;
   _key        = key;
@@ -430,7 +433,7 @@ void adriTools_serialRead::cmd_array(int pos, int cnt) {
 }
 
 
-void adriTools_serialRead::cmd_item_add(int pos, String name, char* key, String ret, at_srFunc f){
+void adriTools_serialRead::cmd_item_add(int pos, String name, const char* key, String ret, at_srFunc f){
 
     switch (pos){
         case 1: 
@@ -464,6 +467,7 @@ void adriTools_serialRead::loop(){
 
         String cmd = "";
         String value = "";  
+        // const char * bl = "";
         static String lastMsg = "";
 
         if (a.indexOf("^")>=0)a=lastMsg;
@@ -479,14 +483,14 @@ void adriTools_serialRead::loop(){
                 }
             }        
         }       
-        else if (_cmd_3_sep!="") {
+        else if (_cmd_3_sep != (char *)"") {
             if (a.indexOf(_cmd_3_sep)>=0) {
                  splitText(a, _cmd_3_sep, cmd,  value) ; 
                 _cmd_3(cmd, value);
                 next = false;
             }   
         }   
-        else if (_cmd_4_sep!="") {
+        else if (_cmd_4_sep != (char *)"") {
             if (a.indexOf(_cmd_4_sep)>=0) {
                  splitText(a, _cmd_4_sep, cmd,  value) ; 
                 _cmd_4(cmd, value);
@@ -546,7 +550,7 @@ void adri_tools::log_read(String & ret, boolean lineNbr){
   char buffer[255];
   ret = "";
   int nbr = 0;
-    File file = SPIFFS.open("/log.txt", "r");
+    File file = LittleFS.open("/log.txt", "r");
     if (file) {
     while (file.position()<file.size()) {
       String xml = file.readStringUntil('\n');
@@ -566,7 +570,7 @@ void adri_tools::log_read(String & ret, boolean lineNbr){
 }
 void adri_tools::log_write(String old, String timeStr){
     int       freeHeap  = ESP.getFreeHeap();
-    File file = SPIFFS.open("/log.txt", "w");
+    File file = LittleFS.open("/log.txt", "w");
     if (file) {
         char buffer[255];
         sprintf(buffer, "%15s | %15d", timeStr.c_str(), freeHeap);
@@ -577,7 +581,7 @@ void adri_tools::log_write(String old, String timeStr){
 }
 
 void adri_tools::log_write(String old , String timeStr, String msg){
-    File file = SPIFFS.open("/log.txt", "w");
+    File file = LittleFS.open("/log.txt", "w");
     if (file) {
         char buffer[255];
         sprintf(buffer, "%15s | %s", timeStr.c_str(), msg.c_str());
