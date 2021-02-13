@@ -1,7 +1,9 @@
 
 #ifndef ADRI_TOOLS_H
 	#define ADRI_TOOLS_H
+
 	#include <arduino.h>
+	#include "ArduinoTrace.h"
 
 			#define ARRAY_SIZE(A) (sizeof(A) / sizeof((A)[0]))
 
@@ -39,12 +41,11 @@
 // #ifndef DEBUG_WIFI_MULTI
 // #define DEBUG_WIFI_MULTI(...) do { (void)0; } while (0)
 // #endif
-
-			#define fsprintf(parm_a, ...) 	{sprintf_P(printf_buf, (PGM_P)PSTR(parm_a), ##__VA_ARGS__); debugPrint(String(printf_buf));}
-
-
-			#define fsprintfs(parm_a) 		{sprintf_P(printf_buf, PSTR(parm_a)); debugPrint(String(printf_buf));}
-			#define fssprintf(parm_b, parm_a,...) sprintf_P(parm_b, PSTR(parm_a), __VA_ARGS__)
+			extern boolean adri_tools_trace;
+			#define fsprintf(parm_a, ...) 			{sprintf_P(printf_buf, (PGM_P)PSTR(parm_a), ##__VA_ARGS__); debugPrint(String(printf_buf));if(adri_tools_trace){TRACE();debugPrintLn("");}}
+			#define fsprintfv(parm_b, parm_a, ...) 	{sprintf_P(printf_buf, (PGM_P)PSTR(parm_a), ##__VA_ARGS__); debugPrint(String(printf_buf));if(adri_tools_trace){TRACE();DUMP(parm_b);debugPrintLn("");}}
+			#define fsprintfs(parm_a) 				{sprintf_P(printf_buf, PSTR(parm_a)); debugPrint(String(printf_buf));}
+			#define fssprintf(parm_b, parm_a,...) 	sprintf_P(parm_b, PSTR(parm_a), __VA_ARGS__)
 		#endif
 			
 
@@ -178,6 +179,7 @@ public:
 	void log_read(String & ret, boolean lineNbr);
 	void log_write(String old, String timeStr);
 	void log_write(String old, String timeStr, String msg);
+
 	
 };
 adri_tools * adri_toolsPtr_get();

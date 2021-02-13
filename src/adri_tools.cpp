@@ -6,6 +6,7 @@
    fs(tparm,         " :\t");
 #endif
 
+boolean adri_tools_trace = false;
 
 void debugPrint(String buf){Serial.print(buf);};
 void debugPrintLn(String buf){Serial.println(buf);};
